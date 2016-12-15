@@ -104,7 +104,8 @@ var TsickleCompilerHost = (function (_super) {
             // this means we don't process e.g. lib.d.ts.
             if (isDefinitions)
                 return sourceFile;
-            var _a = tsickle.annotate(_this.oldProgram, sourceFile, { untyped: true, convertIndexImportShorthand: true }, _this.delegate, _this.options), output = _a.output, externs = _a.externs, diagnostics = _a.diagnostics;
+            var es6Target = _this.options.target == ts.ScriptTarget.ES6; // This covers ES2015 too
+            var _a = tsickle.annotate(_this.oldProgram, sourceFile, { untyped: true, convertIndexImportShorthand: es6Target }, _this.delegate, _this.options), output = _a.output, externs = _a.externs, diagnostics = _a.diagnostics;
             _this.diagnostics = diagnostics;
             return ts.createSourceFile(fileName, output, languageVersion, true);
         };
@@ -112,7 +113,7 @@ var TsickleCompilerHost = (function (_super) {
     return TsickleCompilerHost;
 }(DelegatingHost));
 exports.TsickleCompilerHost = TsickleCompilerHost;
-var IGNORED_FILES = /\.ngfactory\.js$|\.css\.js$|\.css\.shim\.js$/;
+var IGNORED_FILES = /\.ngfactory\.js$|\.ngstyle\.js$/;
 var MetadataWriterHost = (function (_super) {
     __extends(MetadataWriterHost, _super);
     function MetadataWriterHost(delegate, ngOptions) {
