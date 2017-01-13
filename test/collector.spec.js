@@ -34,6 +34,8 @@ describe('Collector', function () {
             'local-symbol-ref-func-dynamic.ts',
             'private-enum.ts',
             're-exports.ts',
+            're-exports-2.ts',
+            'export-as.d.ts',
             'static-field-reference.ts',
             'static-method.ts',
             'static-method-call.ts',
@@ -58,7 +60,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(sourceFile);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 HeroDetailComponent: {
                     __symbolic: 'class',
@@ -88,7 +90,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(sourceFile);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 AppComponent: {
                     __symbolic: 'class',
@@ -131,7 +133,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(sourceFile);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 HEROES: [
                     { 'id': 11, 'name': 'Mr. Nice', '$quoted$': ['id', 'name'] },
@@ -203,7 +205,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(unsupported1);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 a: { __symbolic: 'error', message: 'Destructuring not supported', line: 1, character: 16 },
                 b: { __symbolic: 'error', message: 'Destructuring not supported', line: 1, character: 19 },
@@ -242,7 +244,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(sourceFile);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 SimpleClass: { __symbolic: 'class' },
                 AbstractClass: { __symbolic: 'class' },
@@ -255,7 +257,7 @@ describe('Collector', function () {
         var metadata = collector.getMetadata(exportedFunctions);
         expect(metadata).toEqual({
             __symbolic: 'module',
-            version: 2,
+            version: 3,
             metadata: {
                 one: {
                     __symbolic: 'function',
@@ -474,6 +476,20 @@ describe('Collector', function () {
             { from: 'angular2/core' }
         ]);
     });
+    it('should be able to collect a export as symbol', function () {
+        var source = program.getSourceFile('export-as.d.ts');
+        var metadata = collector.getMetadata(source);
+        expect(metadata.metadata).toEqual({ SomeFunction: { __symbolic: 'function' } });
+    });
+    it('should be able to collect exports with no module specifier', function () {
+        var source = program.getSourceFile('/re-exports-2.ts');
+        var metadata = collector.getMetadata(source);
+        expect(metadata.metadata).toEqual({
+            MyClass: Object({ __symbolic: 'class' }),
+            OtherModule: { __symbolic: 'reference', module: './static-field-reference', name: 'Foo' },
+            MyOtherModule: { __symbolic: 'reference', module: './static-field', name: 'MyModule' }
+        });
+    });
     it('should collect an error symbol if collecting a reference to a non-exported symbol', function () {
         var source = program.getSourceFile('/local-symbol-ref.ts');
         var metadata = collector.getMetadata(source);
@@ -629,6 +645,8 @@ var FILES = {
     'static-field-reference.ts': "\n    import {Component} from 'angular2/core';\n    import {MyModule} from './static-field';\n\n    @Component({\n      providers: [ { provide: 'a', useValue: MyModule.VALUE } ]\n    })\n    export class Foo { }\n  ",
     'static-method-with-if.ts': "\n    export class MyModule {\n      static with(cond: boolean): any[] {\n        return [\n          MyModule,\n          { provider: 'a', useValue: cond ? '1' : '2' }\n        ];\n      }\n    }\n  ",
     're-exports.ts': "\n    export {MyModule} from './static-field';\n    export {Foo as OtherModule} from './static-field-reference';\n    export * from 'angular2/core';\n  ",
+    're-exports-2.ts': "\n    import {MyModule} from './static-field';\n    import {Foo as OtherModule} from './static-field-reference';\n    class MyClass {}\n    export {OtherModule, MyModule as MyOtherModule, MyClass};\n  ",
+    'export-as.d.ts': "\n     declare function someFunction(): void;\n     export { someFunction as SomeFunction };\n ",
     'local-symbol-ref.ts': "\n    import {Component, Validators} from 'angular2/core';\n\n    var REQUIRED;\n\n    export const REQUIRED_VALIDATOR: any = {\n      provide: 'SomeToken',\n      useValue: REQUIRED,\n      multi: true\n    };\n\n    @Component({\n      providers: [REQUIRED_VALIDATOR]\n    })\n    export class SomeComponent {}\n  ",
     'private-enum.ts': "\n    export enum PublicEnum { a, b, c }\n    enum PrivateEnum { e, f, g }\n  ",
     'local-function-ref.ts': "\n    import {Component, Validators} from 'angular2/core';\n\n    function required() {}\n\n    export const REQUIRED_VALIDATOR: any = {\n      provide: 'SomeToken',\n      useValue: required,\n      multi: true\n    };\n\n    @Component({\n      providers: [REQUIRED_VALIDATOR]\n    })\n    export class SomeComponent {}\n  ",

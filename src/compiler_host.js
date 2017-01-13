@@ -104,8 +104,8 @@ var TsickleCompilerHost = (function (_super) {
             // this means we don't process e.g. lib.d.ts.
             if (isDefinitions)
                 return sourceFile;
-            var es6Target = _this.options.target == ts.ScriptTarget.ES6; // This covers ES2015 too
-            var _a = tsickle.annotate(_this.oldProgram, sourceFile, { untyped: true, convertIndexImportShorthand: es6Target }, _this.delegate, _this.options), output = _a.output, externs = _a.externs, diagnostics = _a.diagnostics;
+            var es2015Target = _this.options.target == ts.ScriptTarget.ES2015; // This covers ES6 too
+            var _a = tsickle.annotate(_this.oldProgram, sourceFile, { untyped: true, convertIndexImportShorthand: es2015Target }, _this.delegate, _this.options), output = _a.output, externs = _a.externs, diagnostics = _a.diagnostics;
             _this.diagnostics = diagnostics;
             return ts.createSourceFile(fileName, output, languageVersion, true);
         };
@@ -120,7 +120,8 @@ var MetadataWriterHost = (function (_super) {
         var _this = this;
         _super.call(this, delegate);
         this.ngOptions = ngOptions;
-        this.metadataCollector = new collector_1.MetadataCollector();
+        this.metadataCollector = new collector_1.MetadataCollector({ quotedNames: true });
+        this.metadataCollector1 = new collector_1.MetadataCollector({ version: 1 });
         this.writeFile = function (fileName, data, writeByteOrderMark, onError, sourceFiles) {
             if (/\.d\.ts$/.test(fileName)) {
                 // Let the original file be written first; this takes care of creating parent directories
@@ -148,19 +149,18 @@ var MetadataWriterHost = (function (_super) {
         // released
         if (/\.js$/.test(emitFilePath)) {
             var path_1 = emitFilePath.replace(/*DTS*/ /\.js$/, '.metadata.json');
-            var metadata = this.metadataCollector.getMetadata(sourceFile, !!this.ngOptions.strictMetadataEmit);
-            var metadatas = [metadata];
-            if (metadata && metadata.metadata) {
-                if (metadata.version === 2) {
-                    // Also emit a version 1 so that older clients can consume new metadata files as well.
-                    // We can write the same data as version 2 is a strict super set.
-                    metadatas.push({
-                        __symbolic: metadata.__symbolic,
-                        exports: metadata.exports,
-                        metadata: metadata.metadata,
-                        version: 1
-                    });
-                }
+            // Beginning with 2.1, TypeScript transforms the source tree before emitting it.
+            // We need the original, unmodified, tree which might be several levels back
+            // depending on the number of transforms performed. All SourceFile's prior to 2.1
+            // will appear to be the original source since they didn't include an original field.
+            var collectableFile = sourceFile;
+            while (collectableFile.original) {
+                collectableFile = collectableFile.original;
+            }
+            var metadata = this.metadataCollector.getMetadata(collectableFile, !!this.ngOptions.strictMetadataEmit);
+            var metadata1 = this.metadataCollector1.getMetadata(collectableFile, false);
+            var metadatas = [metadata, metadata1].filter(function (e) { return !!e; });
+            if (metadatas.length) {
                 var metadataText = JSON.stringify(metadatas);
                 fs_1.writeFileSync(path_1, metadataText, { encoding: 'utf-8' });
             }

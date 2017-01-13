@@ -103,7 +103,9 @@ if (require.main === module) {
     var project = options.project || '.';
     // TODO(alexeagle): command line should be TSC-compatible, remove "CliOptions" here
     var cliOptions = new cli_options_1.CliOptions(require('minimist')(args_1));
-    main(project, cliOptions, null, options).then(function (exitCode) { return process.exit(exitCode); }).catch(function (e) {
+    main(project, cliOptions, null, options)
+        .then(function (exitCode) { return process.exit(exitCode); })
+        .catch(function (e) {
         console.error(e.stack);
         console.error('Compilation failed');
         process.exit(1);
